@@ -1,0 +1,11 @@
+revoke insert,update,delete on public.fee_splits from authenticated;
+revoke insert,update,delete on public.fee_allocations from authenticated;
+revoke insert,update,delete on public.allocation_revisions from authenticated;
+revoke insert,update,delete on public.client_payments from authenticated;
+revoke insert,update,delete on public.payouts from authenticated;
+revoke insert,update,delete on public.payout_allocations from authenticated;
+revoke insert,update,delete on public.cash_transactions from authenticated;
+revoke insert,update,delete on public.audit_logs from authenticated;
+revoke insert,delete on public.notifications from authenticated;
+revoke update on public.notifications from authenticated;
+grant update(read_at) on public.notifications to authenticated;

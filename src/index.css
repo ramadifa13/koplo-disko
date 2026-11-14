@@ -1,0 +1,215 @@
+﻿@import "tailwindcss";
+:root {
+  --brand-primary: #6c0c7a;
+  --brand-primary-hover: #831093;
+  --brand-accent: #fec400;
+  font-family: Inter, Geist, ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+  background: #09090b;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+::selection {
+  background: rgb(108 12 122 / 0.75);
+  color: #fff;
+}
+:focus-visible {
+  outline-color: var(--brand-accent);
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  background: #09090b;
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 8% -10%,
+      rgb(108 12 122 / 0.2),
+      transparent 28rem
+    ),
+    radial-gradient(circle at 92% 0%, rgb(254 196 0 / 0.06), transparent 24rem),
+    #09090b;
+  color: #e4e4e7;
+  transition:
+    background-color 240ms ease,
+    color 240ms ease;
+}
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  content: "";
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  pointer-events: none;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgb(161 161 170 / 0.36);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(254 196 0 / 0.42);
+  background-clip: padding-box;
+}
+code {
+  border-radius: 0.35rem;
+  background: rgb(255 255 255 / 0.08);
+  padding: 0.15rem 0.35rem;
+  color: #fec400;
+}
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.72);
+  backdrop-filter: blur(4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.light {
+  color-scheme: light;
+  background: #f7f7fb;
+}
+.light body,
+.light .bg-zinc-950 {
+  background-color: #f7f7fb !important;
+}
+.light [class*="bg-zinc-950/"] {
+  background-color: rgb(248 248 252 / 0.94) !important;
+}
+.light body {
+  background-image:
+    radial-gradient(
+      circle at 8% -10%,
+      rgb(108 12 122 / 0.1),
+      transparent 28rem
+    ),
+    radial-gradient(circle at 92% 0%, rgb(254 196 0 / 0.12), transparent 24rem) !important;
+}
+.light .bg-zinc-900,
+.light .bg-zinc-900\/60,
+.light .bg-zinc-900\/70,
+.light .bg-zinc-900\/95 {
+  background-color: #fff !important;
+}
+.light [class*="bg-zinc-900/"] {
+  background-color: rgb(255 255 255 / 0.92) !important;
+}
+.light .bg-zinc-800,
+.light .hover\:bg-zinc-700:hover {
+  background-color: #f1f1f5 !important;
+}
+.light .text-white,
+.light .text-zinc-100,
+.light .text-zinc-200,
+.light .text-zinc-300 {
+  color: #18181b !important;
+}
+.light .text-zinc-400 {
+  color: #52525b !important;
+}
+.light .text-zinc-500,
+.light .text-zinc-600 {
+  color: #595964 !important;
+}
+.light [class*="text-[#fec400]"] {
+  color: #6c0c7a !important;
+}
+.light .text-amber-300,
+.light .text-amber-400 {
+  color: #92400e !important;
+}
+.light .text-emerald-300,
+.light .text-emerald-400 {
+  color: #047857 !important;
+}
+.light .text-red-300,
+.light .text-red-400 {
+  color: #b91c1c !important;
+}
+.light .border-white\/10,
+.light .border-white\/5 {
+  border-color: #dddde5 !important;
+}
+.light [class*="border-white/"] {
+  border-color: #dddde5 !important;
+}
+.light [class*="bg-white/"] {
+  background-color: rgb(108 12 122 / 0.045) !important;
+}
+.light .hover\:bg-white\/5:hover,
+.light .hover\:bg-white\/10:hover {
+  background-color: rgb(108 12 122 / 0.075) !important;
+}
+.light input,
+.light select,
+.light textarea {
+  border-color: #d7d7df !important;
+  background-color: #fff !important;
+  color: #18181b !important;
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #8a8a96 !important;
+}
+.light input:disabled,
+.light select:disabled,
+.light textarea:disabled {
+  background-color: #f1f1f5 !important;
+  color: #52525b !important;
+}
+.light [class*="bg-[#fec400]/"] {
+  background-color: rgb(254 196 0 / 0.16) !important;
+}
+.light [class*="bg-[#6c0c7a]/"] {
+  background-color: rgb(108 12 122 / 0.09) !important;
+}
+.light .shadow-2xl,
+.light [class*="shadow-"] {
+  --tw-shadow-color: rgb(65 24 72 / 0.11);
+}
+.light .bg-black\/60,
+.light .bg-black\/70 {
+  background-color: rgb(24 24 27 / 0.42) !important;
+}
+.light code {
+  background: rgb(108 12 122 / 0.08);
+  color: #6c0c7a;
+}
