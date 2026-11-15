@@ -263,29 +263,33 @@ export function DocumentsPage() {
             {q.data.rows.map((d) => (
               <Card
                 key={d.id}
-                className="flex items-center justify-between gap-3"
+                className="flex flex-col items-stretch gap-3 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <b className="block truncate text-white">{d.name}</b>
                   <p className="text-sm text-zinc-400">
                     {d.category} · {formatTanggal(d.created_at)} ·{" "}
                     {Math.ceil(d.size_bytes / 1024)} KB
                   </p>
                 </div>
-                <Button
-                  className="shrink-0 bg-zinc-800 px-3 hover:bg-zinc-700"
-                  aria-label={`Pratinjau ${d.name}`}
-                  onClick={() => void openPreview(d)}
-                >
-                  <Eye size={17} />
-                </Button>
-                <Button
-                  className="shrink-0 bg-zinc-800 px-3 hover:bg-zinc-700"
-                  aria-label={`Unduh ${d.name}`}
-                  onClick={() => void download(d.storage_path, d.name)}
-                >
-                  <Download size={17} />
-                </Button>
+                <div className="grid shrink-0 grid-cols-2 gap-2">
+                  <Button
+                    className="bg-zinc-800 px-3 hover:bg-zinc-700"
+                    aria-label={`Pratinjau ${d.name}`}
+                    onClick={() => void openPreview(d)}
+                  >
+                    <Eye size={17} />
+                    <span className="min-[380px]:sr-only">Pratinjau</span>
+                  </Button>
+                  <Button
+                    className="bg-zinc-800 px-3 hover:bg-zinc-700"
+                    aria-label={`Unduh ${d.name}`}
+                    onClick={() => void download(d.storage_path, d.name)}
+                  >
+                    <Download size={17} />
+                    <span className="min-[380px]:sr-only">Unduh</span>
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>

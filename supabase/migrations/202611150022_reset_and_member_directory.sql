@@ -12,7 +12,12 @@ begin
   limit 1;
 
   if v_owner is null then
-    raise exception 'Reset dibatalkan: Owner aktif tidak ditemukan.';
+    -- Database baru (termasuk CI) belum mempunyai akun Auth/Owner. Reset ini
+    -- adalah operasi satu kali untuk instalasi yang sudah aktif, sehingga aman
+    -- dilewati ketika belum ada data pengguna. Objek schema di bawah tetap
+    -- dibuat setelah blok DO selesai.
+    raise notice 'Reset operasional dilewati: Owner aktif belum tersedia.';
+    return;
   end if;
 
   truncate table

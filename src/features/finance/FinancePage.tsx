@@ -187,12 +187,15 @@ export function FinancePage() {
               status jadwal.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={() => setModal({ type: "client" })}>
+          <div className="grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-2 lg:w-auto">
+            <Button
+              className="w-full whitespace-nowrap"
+              onClick={() => setModal({ type: "client" })}
+            >
               <ArrowDownToLine size={17} /> Uang Masuk
             </Button>
             <Button
-              className="bg-[#fec400] text-zinc-950 hover:bg-[#ffd32f]"
+              className="w-full whitespace-nowrap bg-[#fec400] text-zinc-950 hover:bg-[#ffd32f]"
               onClick={() => setModal({ type: "cash" })}
             >
               <Plus size={17} /> Transaksi Kas

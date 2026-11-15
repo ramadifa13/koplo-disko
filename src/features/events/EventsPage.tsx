@@ -242,10 +242,15 @@ export function EventsPage() {
                     </div>
                   )}
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-3 text-xs text-zinc-400">
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays size={14} className="text-[#fec400]" />
-                    {formatTanggalWaktu(event.starts_at)}
+                <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-white/10 pt-3 text-xs text-zinc-400 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                  <span className="flex min-w-0 items-start gap-1.5 sm:items-center">
+                    <CalendarDays
+                      size={14}
+                      className="mt-0.5 shrink-0 text-[#fec400] sm:mt-0"
+                    />
+                    <span className="min-w-0 leading-5">
+                      {formatTanggalWaktu(event.starts_at)}
+                    </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1.5">
                     <Clock3 size={14} />
@@ -253,7 +258,7 @@ export function EventsPage() {
                   </span>
                   <ChevronRight
                     size={17}
-                    className="shrink-0 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-[#fec400]"
+                    className="col-span-2 justify-self-end text-zinc-600 transition group-hover:translate-x-1 group-hover:text-[#fec400] sm:col-span-1"
                   />
                 </div>
               </Card>
