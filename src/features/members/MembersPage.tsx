@@ -48,7 +48,7 @@ const getRole = (row: MemberRow): AppRole => {
   return relation?.roles.key ?? "member";
 };
 export function MembersPage() {
-  const { profile } = useAuth();
+  const { capabilities } = useAuth();
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<MemberRow | null>(null);
@@ -299,8 +299,11 @@ export function MembersPage() {
                   className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-zinc-950 px-3"
                 >
                   <option value="member">Member</option>
-                  {profile?.role !== "member" && (
+                  {capabilities?.manage_members && (
                     <option value="manager">Manager</option>
+                  )}
+                  {capabilities?.manage_owner && (
+                    <option value="owner">Owner</option>
                   )}
                 </select>
               </label>
@@ -394,27 +397,28 @@ export function MembersPage() {
                 Role saat ini:{" "}
                 <b className="text-white">{roleLabel[getRole(selected)]}</b>
               </p>
-              {profile?.role !== "member" && getRole(selected) !== "owner" && (
-                <>
-                  <Button
-                    className="w-full"
-                    disabled={access.isPending}
-                    onClick={() =>
-                      access.mutate({
-                        id: selected.id,
-                        role:
-                          getRole(selected) === "manager"
-                            ? "member"
-                            : "manager",
-                        active: selected.is_active,
-                      })
-                    }
-                  >
-                    Jadikan{" "}
-                    {getRole(selected) === "manager" ? "Member" : "Manager"}
-                  </Button>
-                </>
-              )}
+              {capabilities?.manage_members &&
+                getRole(selected) !== "owner" && (
+                  <>
+                    <Button
+                      className="w-full"
+                      disabled={access.isPending}
+                      onClick={() =>
+                        access.mutate({
+                          id: selected.id,
+                          role:
+                            getRole(selected) === "manager"
+                              ? "member"
+                              : "manager",
+                          active: selected.is_active,
+                        })
+                      }
+                    >
+                      Jadikan{" "}
+                      {getRole(selected) === "manager" ? "Member" : "Manager"}
+                    </Button>
+                  </>
+                )}
               {selected.is_active ? (
                 <ConfirmAction
                   title="Nonaktifkan akun anggota?"

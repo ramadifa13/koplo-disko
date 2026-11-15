@@ -74,9 +74,7 @@ export function CashPanel({
       toast.error(e instanceof Error ? e.message : "Transaksi gagal disimpan."),
   });
   const reverse = useMutation({
-    mutationFn: async (id: string) => {
-      const reason = window.prompt("Alasan koreksi transaksi kas")?.trim();
-      if (!reason) throw new Error("Alasan koreksi wajib diisi.");
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const { error } = await supabase!.rpc("reverse_cash_transaction", {
         p_transaction_id: id,
         p_reason: reason,
@@ -233,8 +231,11 @@ export function CashPanel({
                         title="Koreksi transaksi kas?"
                         description="Sistem akan membuat transaksi pembalik dan mempertahankan histori asli untuk audit."
                         confirmLabel="Buat Koreksi"
+                        reasonLabel="Alasan koreksi"
                         disabled={reverse.isPending}
-                        onConfirm={() => reverse.mutate(t.id)}
+                        onConfirm={(reason) =>
+                          reverse.mutate({ id: t.id, reason: reason! })
+                        }
                         trigger={
                           <button
                             aria-label="Koreksi transaksi kas"

@@ -14,6 +14,7 @@ import {
   Button,
   Card,
   EmptyState,
+  ErrorState,
   Input,
   LoadingState,
   PageHeader,
@@ -32,14 +33,12 @@ const tabs = [
   { key: "audit" as const, label: "Audit Log", icon: History },
 ];
 export function SettingsPage() {
-  const { profile } = useAuth();
+  const { profile, capabilities } = useAuth();
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("profile");
-  const visible = tabs.filter(
-    (item) =>
-      !["audit", "permissions"].includes(item.key) ||
-      profile?.role !== "member",
-  );
+  const visible = capabilities?.manage_settings
+    ? tabs
+    : tabs.filter((item) => item.key === "profile");
   const master = useQuery({
     queryKey: ["settings-master", tab],
     queryFn: async () => {
@@ -74,7 +73,7 @@ export function SettingsPage() {
       if (error) throw error;
       return data.value as { name: string; timezone: string; locale: string };
     },
-    enabled: tab === "profile",
+    enabled: tab === "profile" && Boolean(capabilities?.manage_settings),
   });
   const templates = useQuery({
     queryKey: ["fee-templates"],
@@ -103,7 +102,7 @@ export function SettingsPage() {
       if (error) throw error;
       return data;
     },
-    enabled: tab === "audit" && profile?.role !== "member",
+    enabled: tab === "audit" && Boolean(capabilities?.view_audit),
   });
   const permissions = useQuery({
     queryKey: ["role-permissions"],
@@ -115,7 +114,7 @@ export function SettingsPage() {
       if (error) throw error;
       return data;
     },
-    enabled: tab === "permissions" && profile?.role !== "member",
+    enabled: tab === "permissions" && Boolean(capabilities?.manage_settings),
   });
   const addMaster = useMutation({
     mutationFn: async ({
@@ -182,11 +181,24 @@ export function SettingsPage() {
       items,
       form,
     }: {
-      items: Array<{ id: string }>;
+      items: Array<{
+        id: string;
+        calculation_type: string;
+      }>;
       form: FormData;
     }) => {
       for (const item of items) {
-        const value = Number(form.get(`item-${item.id}`));
+        const inputValue = Number(form.get(`item-${item.id}`));
+        const value =
+          item.calculation_type === "percentage"
+            ? Math.round(inputValue * 100)
+            : inputValue;
+        if (
+          !Number.isFinite(value) ||
+          value < 0 ||
+          (item.calculation_type === "percentage" && value > 10_000)
+        )
+          throw new Error("Nilai template tidak valid");
         const { error } = await supabase!
           .from("fee_template_items")
           .update({ value })
@@ -217,9 +229,15 @@ export function SettingsPage() {
         title="Pengaturan"
         description="Konfigurasi penting dipusatkan agar aplikasi tetap sederhana."
       />
-      <nav className="mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-zinc-900/60 p-1.5">
+      <nav
+        role="tablist"
+        aria-label="Bagian pengaturan"
+        className="mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-zinc-900/60 p-1.5"
+      >
         {visible.map(({ key, label, icon: Icon }) => (
           <button
+            role="tab"
+            aria-selected={tab === key}
             key={key}
             onClick={() => setTab(key)}
             className={`flex min-w-max items-center gap-2 rounded-xl px-4 py-3 text-sm ${tab === key ? "bg-[#6c0c7a] text-white" : "text-zinc-400 hover:text-white"}`}
@@ -230,8 +248,41 @@ export function SettingsPage() {
         ))}
       </nav>
       {tab === "profile" &&
-        (organization.isLoading ? (
+        (!capabilities?.manage_settings ? (
+          <Card>
+            <h2 className="font-bold text-white">Profil Saya</h2>
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-zinc-500">
+                  Nama
+                </dt>
+                <dd className="mt-1 text-sm text-white">
+                  {profile?.full_name}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-zinc-500">
+                  Email
+                </dt>
+                <dd className="mt-1 text-sm text-white">{profile?.email}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-zinc-500">
+                  Hak akses
+                </dt>
+                <dd className="mt-1 text-sm capitalize text-white">
+                  {profile?.role}
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-5 text-sm text-zinc-400">
+              Hubungi Owner atau Manager untuk mengubah data keanggotaan.
+            </p>
+          </Card>
+        ) : organization.isLoading ? (
           <LoadingState />
+        ) : organization.isError ? (
+          <ErrorState message="Profil organisasi tidak dapat dimuat." />
         ) : (
           <Card>
             <h2 className="font-bold text-white">Profil Koplo Disko</h2>
@@ -258,7 +309,7 @@ export function SettingsPage() {
                 Bahasa
                 <Input className="mt-1" value="Indonesia (id-ID)" disabled />
               </label>
-              {profile?.role !== "member" && (
+              {capabilities?.manage_settings && (
                 <Button className="sm:col-span-2" disabled={saveOrg.isPending}>
                   Simpan Profil
                 </Button>
@@ -269,6 +320,8 @@ export function SettingsPage() {
       {(tab === "events" || tab === "positions") &&
         (master.isLoading ? (
           <LoadingState />
+        ) : master.isError ? (
+          <ErrorState message="Data master tidak dapat dimuat." />
         ) : (
           <div className="space-y-4">
             <Card>
@@ -331,6 +384,8 @@ export function SettingsPage() {
       {tab === "templates" &&
         (templates.isLoading ? (
           <LoadingState />
+        ) : templates.isError ? (
+          <ErrorState message="Template fee tidak dapat dimuat." />
         ) : (
           <div className="grid gap-4">
             {templates.data?.map((template) => (
@@ -368,13 +423,27 @@ export function SettingsPage() {
                               name={`item-${item.id}`}
                               type="number"
                               min={0}
-                              defaultValue={item.value}
+                              max={
+                                item.calculation_type === "percentage"
+                                  ? 100
+                                  : undefined
+                              }
+                              step={
+                                item.calculation_type === "percentage"
+                                  ? 0.01
+                                  : 1
+                              }
+                              defaultValue={
+                                item.calculation_type === "percentage"
+                                  ? item.value / 100
+                                  : item.value
+                              }
                               className="mt-1 min-h-9 w-full rounded-lg border border-white/10 bg-zinc-900 px-2 text-sm text-white"
                             />
                           )}
                           <span className="mt-1 block text-[10px] text-zinc-600">
                             {item.calculation_type === "percentage"
-                              ? "Basis point (1500 = 15%)"
+                              ? "Persen (0–100%)"
                               : "Rupiah"}
                           </span>
                         </label>
@@ -394,6 +463,8 @@ export function SettingsPage() {
       {tab === "permissions" &&
         (permissions.isLoading ? (
           <LoadingState />
+        ) : permissions.isError ? (
+          <ErrorState message="Role dan izin tidak dapat dimuat." />
         ) : (
           <div className="grid gap-4 lg:grid-cols-3">
             {permissions.data?.map((role) => (
@@ -435,6 +506,8 @@ export function SettingsPage() {
       {tab === "audit" &&
         (audit.isLoading ? (
           <LoadingState />
+        ) : audit.isError ? (
+          <ErrorState message="Audit log tidak dapat dimuat." />
         ) : audit.data?.length ? (
           <div className="space-y-2">
             {audit.data.map((log) => (

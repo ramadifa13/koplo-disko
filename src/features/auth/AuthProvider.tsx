@@ -8,11 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
-import type { Profile } from "../../types/domain";
+import type { Capabilities, Profile } from "../../types/domain";
 type AuthState = {
   session: Session | null;
   profile: Profile | null;
+  capabilities: Capabilities | null;
   loading: boolean;
   configured: boolean;
   signOut: () => Promise<void>;
@@ -26,8 +28,10 @@ type ProfileRpcRow = {
 };
 const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   useEffect(() => {
     if (!supabase) return;
@@ -40,17 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(next);
       if (!next) {
         setProfile(null);
+        setCapabilities(null);
+        queryClient.clear();
         setLoading(false);
         return;
       }
-      const { data, error } = await client.rpc("get_my_profile").single();
+      const [profileResult, capabilityResult] = await Promise.all([
+        client.rpc("get_my_profile").single(),
+        client.rpc("get_my_capabilities"),
+      ]);
       if (currentRequest !== requestId) return;
-      if (error) {
+      if (profileResult.error || capabilityResult.error) {
         setProfile(null);
+        setCapabilities(null);
         setLoading(false);
         return;
       }
-      const row = data as ProfileRpcRow | null;
+      const row = profileResult.data as ProfileRpcRow | null;
       const rawRole = row?.role;
       setProfile(
         row
@@ -66,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           : null,
       );
+      setCapabilities(capabilityResult.data as Capabilities);
       setLoading(false);
     };
     void client.auth.getSession().then(({ data }) => load(data.session));
@@ -78,18 +89,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(loadingTimeout);
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
   const value = useMemo(
     () => ({
       session,
       profile,
+      capabilities,
       loading,
       configured: isSupabaseConfigured,
       signOut: async () => {
         await supabase?.auth.signOut();
+        queryClient.clear();
       },
     }),
-    [session, profile, loading],
+    [session, profile, capabilities, loading, queryClient],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

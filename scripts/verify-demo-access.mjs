@@ -30,7 +30,16 @@ for (const email of emails) {
   if (login.error) throw new Error(`${email}: login gagal`);
   const profile = await client.rpc("get_my_profile").single();
   if (profile.error || !profile.data) throw new Error(`${email}: profil gagal`);
+  const capabilities = await client.rpc("get_my_capabilities");
+  if (capabilities.error || !capabilities.data)
+    throw new Error(`${email}: capability gagal`);
+  const shouldManage = ["owner", "manager"].includes(profile.data.role);
+  if (Boolean(capabilities.data.management) !== shouldManage)
+    throw new Error(`${email}: capability tidak sesuai role`);
   if (email.startsWith("manager@")) {
+    const financeSummary = await client.rpc("get_management_finance_summary");
+    if (financeSummary.error || !financeSummary.data)
+      throw new Error("RPC ringkasan keuangan gagal");
     const members = await client.rpc("get_members_directory");
     if (members.error || members.data.length < 5)
       throw new Error("Direktori anggota gagal");
@@ -105,6 +114,17 @@ for (const email of emails) {
       throw new Error(
         `Query pembayaran kru gagal: ${financeOutgoing.error.message}`,
       );
+  }
+  if (!shouldManage) {
+    const start = new Date();
+    start.setUTCMonth(start.getUTCMonth() - 12);
+    const end = new Date();
+    end.setUTCMonth(end.getUTCMonth() + 12);
+    const feeReport = await client.rpc("get_member_fee_report", {
+      p_start: start.toISOString(),
+      p_end: end.toISOString(),
+    });
+    if (feeReport.error) throw new Error(`${email}: laporan fee pribadi gagal`);
   }
   await client.auth.signOut();
   console.log(`Login dan profil terverifikasi: ${email}`);

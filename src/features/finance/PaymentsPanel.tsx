@@ -150,12 +150,12 @@ export function PaymentsPanel({
     mutationFn: async ({
       id,
       kind,
+      reason,
     }: {
       id: string;
       kind: "client" | "payout";
+      reason: string;
     }) => {
-      const reason = window.prompt("Alasan koreksi transaksi")?.trim();
-      if (!reason) throw new Error("Alasan koreksi wajib diisi.");
       const { error } =
         kind === "client"
           ? await supabase!.rpc("reverse_client_payment", {
@@ -474,9 +474,14 @@ export function PaymentsPanel({
                           title="Koreksi pembayaran client?"
                           description="Pembayaran asli tidak dihapus. Sistem akan mencatat transaksi pembalik untuk menjaga audit keuangan."
                           confirmLabel="Buat Koreksi"
+                          reasonLabel="Alasan koreksi"
                           disabled={reverse.isPending}
-                          onConfirm={() =>
-                            reverse.mutate({ id: p.id, kind: "client" })
+                          onConfirm={(reason) =>
+                            reverse.mutate({
+                              id: p.id,
+                              kind: "client",
+                              reason: reason!,
+                            })
                           }
                           trigger={
                             <button
@@ -523,9 +528,14 @@ export function PaymentsPanel({
                         title="Koreksi pembayaran tim?"
                         description="Pembayaran asli tidak dihapus. Sistem akan mencatat pembalik dan memulihkan sisa alokasi terkait."
                         confirmLabel="Buat Koreksi"
+                        reasonLabel="Alasan koreksi"
                         disabled={reverse.isPending}
-                        onConfirm={() =>
-                          reverse.mutate({ id: p.id, kind: "payout" })
+                        onConfirm={(reason) =>
+                          reverse.mutate({
+                            id: p.id,
+                            kind: "payout",
+                            reason: reason!,
+                          })
                         }
                         trigger={
                           <button

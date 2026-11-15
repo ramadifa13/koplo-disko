@@ -224,43 +224,53 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="h-[calc(100%-3.5rem)]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenue.data ?? []}>
-                  <defs>
-                    <linearGradient id="revenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#8b5cf6"
-                        stopOpacity={0.45}
-                      />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                  <XAxis dataKey="month" stroke="#71717a" />
-                  <YAxis
-                    stroke="#71717a"
-                    tickFormatter={(value) =>
-                      `${Math.round(value / 1000000)}jt`
-                    }
-                  />
-                  <Tooltip
-                    formatter={(value) => formatRupiah(Number(value))}
-                    contentStyle={{
-                      background: "#18181b",
-                      border: "1px solid #3f3f46",
-                      borderRadius: 12,
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#a78bfa"
-                    fill="url(#revenue)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {revenue.isError ? (
+                <div className="grid h-full place-items-center text-sm text-red-300">
+                  Grafik pendapatan tidak dapat dimuat.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenue.data ?? []}>
+                    <defs>
+                      <linearGradient id="revenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop
+                          offset="5%"
+                          stopColor="#8b5cf6"
+                          stopOpacity={0.45}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#8b5cf6"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                    <XAxis dataKey="month" stroke="#71717a" />
+                    <YAxis
+                      stroke="#71717a"
+                      tickFormatter={(value) =>
+                        `${Math.round(value / 1000000)}jt`
+                      }
+                    />
+                    <Tooltip
+                      formatter={(value) => formatRupiah(Number(value))}
+                      contentStyle={{
+                        background: "#18181b",
+                        border: "1px solid #3f3f46",
+                        borderRadius: 12,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#a78bfa"
+                      fill="url(#revenue)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </Card>
           <Card className="relative overflow-hidden border-[#fec400]/15 p-5 sm:p-6">
@@ -321,7 +331,11 @@ export function DashboardPage() {
             Lihat semua →
           </Link>
         </div>
-        {events.data?.length ? (
+        {events.isError ? (
+          <ErrorState message="Jadwal terdekat tidak dapat dimuat. Coba muat ulang halaman." />
+        ) : events.isLoading ? (
+          <LoadingState compact label="Memuat jadwal terdekat" />
+        ) : events.data?.length ? (
           <div className="grid gap-3 lg:grid-cols-2">
             {events.data.map((e) => (
               <Card

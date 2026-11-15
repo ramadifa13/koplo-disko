@@ -12,7 +12,7 @@ import {
 import { supabase } from "../../lib/supabase";
 import { formatTanggalWaktu } from "../../lib/format";
 import { cn } from "../../lib/cn";
-import { EmptyState, LoadingState } from "../../components/ui";
+import { EmptyState, ErrorState, LoadingState } from "../../components/ui";
 
 type NotificationPopoverProps = {
   open: boolean;
@@ -160,6 +160,8 @@ export function NotificationPopover({
           <div className="max-h-[calc(100dvh-16rem)] overflow-y-auto p-2.5 sm:max-h-[28rem]">
             {q.isLoading ? (
               <LoadingState label="Memuat notifikasi" compact />
+            ) : q.isError ? (
+              <ErrorState message="Notifikasi tidak dapat dimuat." />
             ) : visible?.length ? (
               visible.map((item) => {
                 const ItemIcon = item.kind.includes("event")

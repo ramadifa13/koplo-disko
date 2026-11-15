@@ -7,6 +7,7 @@ import App from "./App";
 import { AuthProvider } from "./features/auth/AuthProvider";
 import "./index.css";
 import { ThemeProvider } from "./app/ThemeProvider";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
@@ -15,10 +16,12 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <AuthProvider>
-            <App />
-            <Toaster richColors position="top-right" />
-          </AuthProvider>
+          <AppErrorBoundary>
+            <AuthProvider>
+              <App />
+              <Toaster richColors position="top-right" />
+            </AuthProvider>
+          </AppErrorBoundary>
         </ThemeProvider>
       </QueryClientProvider>
     </BrowserRouter>

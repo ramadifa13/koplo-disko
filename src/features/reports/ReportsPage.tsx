@@ -10,14 +10,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import {
   Button,
   Card,
   EmptyState,
+  ErrorState,
   LoadingState,
   PageHeader,
   StatCard,
@@ -40,6 +38,13 @@ type ReportRow = {
   category: string;
   amount: number;
   status: string;
+};
+type MemberFeeReportRow = {
+  event_name: string;
+  starts_at: string;
+  component_key: string;
+  amount: number;
+  remaining_amount: number;
 };
 const labels: Record<ReportType, string> = {
   events: "Rekap Event",
@@ -69,12 +74,13 @@ export function ReportsPage() {
     queryKey: ["report", type, month, profile?.role],
     queryFn: async (): Promise<ReportRow[]> => {
       if (profile?.role === "member") {
-        const { data, error } = await supabase!
-          .from("fee_allocation_balances")
-          .select("event_name,component_key,amount,remaining_amount");
+        const { data, error } = await supabase!.rpc("get_member_fee_report", {
+          p_start: bounds.start,
+          p_end: bounds.end,
+        });
         if (error) throw error;
-        return data.map((item) => ({
-          date: month + "-01",
+        return ((data ?? []) as MemberFeeReportRow[]).map((item) => ({
+          date: item.starts_at,
           name: item.event_name,
           category: item.component_key,
           status:
@@ -208,24 +214,41 @@ export function ReportsPage() {
     }
     return [...days].map(([name, value]) => ({ name, value }));
   }, [query.data]);
-  const exportXlsx = () => {
+  const exportCsv = () => {
     if (!query.data?.length) return;
-    const sheet = XLSX.utils.json_to_sheet(
-      query.data.map((row) => ({
-        Tanggal: formatTanggal(row.date),
-        Nama: row.name,
-        Kategori: row.category,
-        Status: row.status,
-        Nominal: row.amount,
-      })),
+    const safe = (value: string | number) => {
+      let text = String(value).replaceAll('"', '""');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text}"`;
+    };
+    const rows = [
+      ["Tanggal", "Nama", "Kategori", "Status", "Nominal"],
+      ...query.data.map((row) => [
+        formatTanggal(row.date),
+        row.name,
+        row.category,
+        row.status,
+        row.amount,
+      ]),
+    ];
+    const blob = new Blob(
+      ["\uFEFF", rows.map((row) => row.map(safe).join(",")).join("\r\n")],
+      { type: "text/csv;charset=utf-8" },
     );
-    const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, "Laporan");
-    XLSX.writeFile(book, `KDMS-${type}-${month}.xlsx`);
-    toast.success("Laporan XLSX berhasil dibuat.");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `KDMS-${type}-${month}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Laporan CSV berhasil dibuat.");
   };
-  const exportPdf = () => {
+  const exportPdf = async () => {
     if (!query.data?.length) return;
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
     const doc = new jsPDF({ orientation: "landscape" });
     doc.setFontSize(16);
     doc.text(`Koplo Disko — ${labels[type]}`, 14, 16);
@@ -264,12 +287,15 @@ export function ReportsPage() {
             <Button
               className="bg-zinc-800 hover:bg-zinc-700"
               disabled={!query.data?.length}
-              onClick={exportXlsx}
+              onClick={exportCsv}
             >
               <FileSpreadsheet size={17} />
-              XLSX
+              CSV
             </Button>
-            <Button disabled={!query.data?.length} onClick={exportPdf}>
+            <Button
+              disabled={!query.data?.length}
+              onClick={() => void exportPdf()}
+            >
               <Download size={17} />
               PDF
             </Button>
@@ -305,6 +331,8 @@ export function ReportsPage() {
       </Card>
       {query.isLoading ? (
         <LoadingState />
+      ) : query.isError ? (
+        <ErrorState message="Laporan tidak dapat dimuat untuk periode yang dipilih." />
       ) : query.data?.length ? (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">

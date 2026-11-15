@@ -90,6 +90,9 @@ code {
   padding: 0.15rem 0.35rem;
   color: #fec400;
 }
+.mobile-bottom-nav {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
 dialog::backdrop {
   background: rgb(0 0 0 / 0.72);
   backdrop-filter: blur(4px);

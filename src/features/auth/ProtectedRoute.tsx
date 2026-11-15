@@ -52,3 +52,20 @@ export function ProtectedRoute() {
     );
   return <Outlet />;
 }
+
+export function ManagementRoute() {
+  const { capabilities, loading } = useAuth();
+  if (loading) return <LoadingState />;
+  if (!capabilities?.management)
+    return (
+      <main className="grid min-h-[60vh] place-items-center p-6">
+        <Card className="max-w-md text-center">
+          <h1 className="text-xl font-bold text-white">Akses tidak tersedia</h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Halaman ini hanya dapat dibuka oleh Owner atau Manager.
+          </p>
+        </Card>
+      </main>
+    );
+  return <Outlet />;
+}

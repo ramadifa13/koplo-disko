@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownToLine,
@@ -81,6 +81,24 @@ export function FinancePage() {
       return data;
     },
   });
+  const summaryQuery = useQuery({
+    queryKey: ["finance-summary"],
+    enabled: Boolean(profile && profile.role !== "member"),
+    queryFn: async () => {
+      const { data, error } = await supabase!.rpc(
+        "get_management_finance_summary",
+      );
+      if (error) throw error;
+      return data as {
+        contract: number;
+        received: number;
+        receivable: number;
+        settled: number;
+        active_events: number;
+        cash_balance: number;
+      };
+    },
+  });
   const payments = useQuery({
     queryKey: ["finance-payment-history"],
     queryFn: async () => {
@@ -119,30 +137,14 @@ export function FinancePage() {
       return data;
     },
   });
-  const summary = useMemo(
-    () =>
-      (events.data ?? []).reduce(
-        (result, event) => {
-          const received = event.client_payments.reduce(
-            (total, item) =>
-              total + (item.kind === "refund" ? -item.amount : item.amount),
-            0,
-          );
-          result.contract += event.contract_value;
-          result.received += received;
-          result.receivable += Math.max(0, event.contract_value - received);
-          if (received >= event.contract_value) result.settled += 1;
-          return result;
-        },
-        { contract: 0, received: 0, receivable: 0, settled: 0 },
-      ),
-    [events.data],
-  );
-  const cashBalance = (cash.data ?? []).reduce(
-    (total, item) =>
-      total + (item.direction === "income" ? item.amount : -item.amount),
-    0,
-  );
+  const summary = summaryQuery.data ?? {
+    contract: 0,
+    received: 0,
+    receivable: 0,
+    settled: 0,
+    active_events: 0,
+    cash_balance: 0,
+  };
 
   if (profile?.role === "member")
     return (
@@ -160,6 +162,7 @@ export function FinancePage() {
       queryClient.invalidateQueries({ queryKey: ["finance-events-overview"] }),
       queryClient.invalidateQueries({ queryKey: ["finance-payment-history"] }),
       queryClient.invalidateQueries({ queryKey: ["finance-cash-history"] }),
+      queryClient.invalidateQueries({ queryKey: ["finance-summary"] }),
     ]);
   };
 
@@ -176,8 +179,8 @@ export function FinancePage() {
               <CircleDollarSign size={14} /> Pusat Keuangan
             </span>
             <h2 className="mt-3 text-xl font-bold text-white sm:text-2xl">
-              {summary.settled} acara lunas dari {events.data?.length ?? 0}{" "}
-              acara aktif
+              {summary.settled} acara lunas dari {summary.active_events} acara
+              aktif
             </h2>
             <p className="mt-1 text-sm leading-6 text-zinc-400">
               Status lunas dihitung dari transaksi uang masuk klien, bukan dari
@@ -212,12 +215,18 @@ export function FinancePage() {
         />
         <StatCard
           label="Saldo kas tercatat"
-          value={formatRupiah(cashBalance)}
+          value={formatRupiah(summary.cash_balance)}
         />
       </div>
-      <nav className="mb-6 grid gap-2 rounded-2xl border border-white/10 bg-zinc-900/60 p-2 sm:grid-cols-3">
+      <nav
+        role="tablist"
+        aria-label="Bagian keuangan"
+        className="mb-6 grid gap-2 rounded-2xl border border-white/10 bg-zinc-900/60 p-2 sm:grid-cols-3"
+      >
         {tabs.map(({ key, label, hint, icon: Icon }) => (
           <button
+            role="tab"
+            aria-selected={tab === key}
             key={key}
             onClick={() => setTab(key)}
             className={cn(

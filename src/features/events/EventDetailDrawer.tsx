@@ -46,6 +46,9 @@ export function EventDetailDrawer({
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState(false);
+  const [bookingSource, setBookingSourceValue] = useState<
+    "direct" | "internal" | "external" | null
+  >(null);
   const management = profile?.role !== "member";
   const event = useQuery({
     queryKey: ["event-detail", eventId],
@@ -121,10 +124,14 @@ export function EventDetailDrawer({
   const setBookingSource = useMutation({
     mutationFn: async (form: FormData) => {
       const source = String(form.get("source"));
+      const memberId =
+        source === "internal" ? String(form.get("member")) : null;
+      if (source === "internal" && !memberId)
+        throw new Error("Pilih anggota pemberi referensi.");
       const { error } = await supabase!.rpc("set_event_booking_source", {
         p_event_id: eventId,
         p_source: source,
-        p_member_id: source === "internal" ? String(form.get("member")) : null,
+        p_member_id: memberId,
       });
       if (error) throw error;
     },
@@ -188,6 +195,13 @@ export function EventDetailDrawer({
     );
   if (!event.data) return null;
   const e = event.data;
+  const currentBookingSource =
+    bookingSource ??
+    (e.hunters?.[0]?.member_id
+      ? "internal"
+      : e.hunters?.length
+        ? "external"
+        : "direct");
   const startsAt = new Date(e.starts_at);
   const localStartsAt = new Date(
     startsAt.getTime() - startsAt.getTimezoneOffset() * 60_000,
@@ -636,12 +650,12 @@ export function EventDetailDrawer({
                       Ubah sumber booking
                       <select
                         name="source"
-                        defaultValue={
-                          e.hunters?.[0]?.member_id
-                            ? "internal"
-                            : e.hunters?.length
-                              ? "external"
-                              : "direct"
+                        value={currentBookingSource}
+                        onChange={(event) =>
+                          setBookingSourceValue(
+                            event.target.value as
+                              "direct" | "internal" | "external",
+                          )
                         }
                         className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-zinc-900 px-3"
                       >
@@ -654,21 +668,26 @@ export function EventDetailDrawer({
                         </option>
                       </select>
                     </label>
-                    <label className="text-sm text-zinc-300">
-                      Anggota pemberi referensi (hanya untuk sumber internal)
-                      <select
-                        name="member"
-                        defaultValue={e.hunters?.[0]?.member_id ?? ""}
-                        className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-zinc-900 px-3"
-                      >
-                        <option value="">Pilih anggota jika diperlukan</option>
-                        {refs.data?.members.map((member) => (
-                          <option key={member.id} value={member.id}>
-                            {member.full_name}
+                    {currentBookingSource === "internal" && (
+                      <label className="text-sm text-zinc-300">
+                        Anggota pemberi referensi
+                        <select
+                          name="member"
+                          required
+                          defaultValue={e.hunters?.[0]?.member_id ?? ""}
+                          className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-zinc-900 px-3"
+                        >
+                          <option value="" disabled>
+                            Pilih anggota pemberi referensi
                           </option>
-                        ))}
-                      </select>
-                    </label>
+                          {refs.data?.members.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
                     <Button disabled={setBookingSource.isPending}>
                       Simpan Sumber Booking
                     </Button>

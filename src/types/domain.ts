@@ -1,4 +1,13 @@
 export type AppRole = "owner" | "manager" | "member";
+export type Capabilities = {
+  management: boolean;
+  manage_owner: boolean;
+  manage_members: boolean;
+  manage_finance: boolean;
+  manage_documents: boolean;
+  manage_settings: boolean;
+  view_audit: boolean;
+};
 export type BookingStatus =
   "inquiry" | "negotiation" | "confirmed" | "completed" | "cancelled";
 export type Profile = {

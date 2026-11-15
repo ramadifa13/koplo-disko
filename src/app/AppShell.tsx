@@ -30,13 +30,15 @@ const nav = [
   { to: "/laporan", label: "Laporan", icon: ReceiptText },
 ];
 export function AppShell() {
-  const { profile, signOut } = useAuth();
+  const { profile, capabilities, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [activePopover, setActivePopover] = useState<
     "notifications" | "account" | null
   >(null);
   const accountRef = useRef<HTMLDivElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const reducedMotion = useReducedMotion();
   const setNotificationOpen = useCallback((open: boolean) => {
@@ -47,6 +49,7 @@ export function AppShell() {
     const frame = requestAnimationFrame(() => {
       setActivePopover(null);
       setMobileMenu(false);
+      mainRef.current?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
   }, [location.pathname]);
@@ -68,10 +71,24 @@ export function AppShell() {
       document.removeEventListener("keydown", escape);
     };
   }, [activePopover]);
-  const visible =
-    profile?.role === "member"
-      ? nav.filter((item) => !["/anggota"].includes(item.to))
-      : nav;
+  useEffect(() => {
+    if (!mobileMenu) return;
+    const trigger = mobileMenuButtonRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenu(false);
+    };
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", escape);
+      trigger?.focus();
+    };
+  }, [mobileMenu]);
+  const visible = capabilities?.manage_members
+    ? nav
+    : nav.filter((item) => item.to !== "/anggota");
   return (
     <div className="min-h-screen text-zinc-200">
       <a
@@ -128,6 +145,7 @@ export function AppShell() {
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/10 bg-zinc-950/75 px-4 backdrop-blur-xl sm:px-7">
           <div className="flex items-center gap-2">
             <button
+              ref={mobileMenuButtonRef}
               aria-label="Buka menu"
               className="rounded-lg p-2 lg:hidden"
               onClick={() => {
@@ -232,6 +250,8 @@ export function AppShell() {
           </div>
         </header>
         <motion.main
+          ref={mainRef}
+          tabIndex={-1}
           key={location.pathname}
           initial={reducedMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -243,7 +263,7 @@ export function AppShell() {
         </motion.main>
       </div>
       <nav
-        className="fixed inset-x-3 bottom-3 z-30 flex justify-around rounded-2xl border border-white/10 bg-zinc-950/90 px-1 py-2 shadow-2xl backdrop-blur-xl lg:hidden"
+        className="mobile-bottom-nav fixed inset-x-3 z-30 flex justify-around rounded-2xl border border-white/10 bg-zinc-950/90 px-1 py-2 shadow-2xl backdrop-blur-xl lg:hidden"
         aria-label="Navigasi mobile"
       >
         {visible
@@ -284,7 +304,12 @@ export function AppShell() {
             if (e.target === e.currentTarget) setMobileMenu(false);
           }}
         >
-          <aside className="ml-auto h-full w-[min(86vw,340px)] border-l border-white/10 bg-zinc-950/95 p-5 shadow-2xl">
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu utama"
+            className="ml-auto h-full w-[min(86vw,340px)] border-l border-white/10 bg-zinc-950/95 p-5 shadow-2xl"
+          >
             <header className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img

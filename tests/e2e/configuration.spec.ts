@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 test("menampilkan halaman masuk tanpa data palsu", async ({ page }) => {
   await page.goto("/");
   await expect(
@@ -46,4 +47,18 @@ test("menampilkan pesan Indonesia ketika kredensial tidak benar", async ({
   await expect(
     page.getByText("Email atau kata sandi tidak benar."),
   ).toBeVisible();
+});
+
+test("halaman masuk tidak memiliki pelanggaran accessibility serius", async ({
+  page,
+}) => {
+  await page.goto("/masuk");
+  const results = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(
+    results.violations.filter((violation) =>
+      ["serious", "critical"].includes(violation.impact ?? ""),
+    ),
+  ).toEqual([]);
 });

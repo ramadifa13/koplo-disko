@@ -1,7 +1,10 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./app/AppShell";
-import { ProtectedRoute } from "./features/auth/ProtectedRoute";
+import {
+  ManagementRoute,
+  ProtectedRoute,
+} from "./features/auth/ProtectedRoute";
 import { LoginPage } from "./features/auth/LoginPage";
 import { ResetPasswordPage } from "./features/auth/ResetPasswordPage";
 import KoploDiskoLoader from "./components/koplo-disko-loading/KoploDiskoLoader";
@@ -55,7 +58,9 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="jadwal" element={<EventsPage />} />
             <Route path="keuangan" element={<FinancePage />} />
-            <Route path="anggota" element={<MembersPage />} />
+            <Route element={<ManagementRoute />}>
+              <Route path="anggota" element={<MembersPage />} />
+            </Route>
             <Route path="dokumen" element={<DocumentsPage />} />
             <Route path="laporan" element={<ReportsPage />} />
             <Route path="pengaturan" element={<SettingsPage />} />

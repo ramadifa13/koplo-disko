@@ -33,6 +33,8 @@ const allowedTypes = [
 export function DocumentsPage() {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState("");
   const [preview, setPreview] = useState<{
     id: string;
     name: string;
@@ -164,10 +166,13 @@ export function DocumentsPage() {
       url: data.signedUrl,
     });
   };
-  const rename = async () => {
+  const rename = async (next: string) => {
     if (!preview) return;
-    const next = window.prompt("Nama dokumen baru", preview.name)?.trim();
-    if (!next || next === preview.name) return;
+    next = next.trim();
+    if (!next || next === preview.name) {
+      setRenameOpen(false);
+      return;
+    }
     const { error } = await supabase!
       .from("documents")
       .update({ name: next })
@@ -178,16 +183,11 @@ export function DocumentsPage() {
     }
     await queryClient.invalidateQueries({ queryKey: ["documents"] });
     setPreview({ ...preview, name: next });
+    setRenameOpen(false);
     toast.success("Nama dokumen diperbarui.");
   };
   const archive = async () => {
-    if (
-      !preview ||
-      !window.confirm(
-        "Arsipkan dokumen ini? Dokumen tidak akan muncul pada daftar aktif.",
-      )
-    )
-      return;
+    if (!preview) return;
     const { error } = await supabase!
       .from("documents")
       .update({ archived_at: new Date().toISOString() })
@@ -424,7 +424,10 @@ export function DocumentsPage() {
                     <button
                       aria-label="Ubah nama"
                       className="rounded-lg p-2 hover:bg-white/5"
-                      onClick={() => void rename()}
+                      onClick={() => {
+                        setRenameName(preview.name);
+                        setRenameOpen(true);
+                      }}
                     >
                       <Pencil size={18} />
                     </button>
@@ -484,6 +487,46 @@ export function DocumentsPage() {
               )}
             </div>
           </section>
+        </div>
+      )}
+      {renameOpen && preview && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4">
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rename-title"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void rename(renameName);
+            }}
+          >
+            <h2 id="rename-title" className="text-lg font-bold text-white">
+              Ubah nama dokumen
+            </h2>
+            <label className="mt-4 block text-sm text-zinc-300">
+              Nama dokumen
+              <input
+                autoFocus
+                required
+                minLength={2}
+                maxLength={160}
+                value={renameName}
+                onChange={(event) => setRenameName(event.target.value)}
+                className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 text-white outline-none focus:border-[#fec400]"
+              />
+            </label>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button
+                type="button"
+                className="bg-zinc-800 hover:bg-zinc-700"
+                onClick={() => setRenameOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button type="submit">Simpan</Button>
+            </div>
+          </form>
         </div>
       )}
     </>

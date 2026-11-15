@@ -8,6 +8,15 @@ export default defineConfig({
     reuseExistingServer: true,
   },
   projects: [
+    {
+      name: "small-mobile",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 320, height: 568 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
     { name: "mobile", use: { ...devices["iPhone 13"] } },
     { name: "tablet", use: { ...devices["iPad (gen 7)"] } },
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

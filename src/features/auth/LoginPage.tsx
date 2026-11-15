@@ -61,7 +61,7 @@ export function LoginPage() {
             ))}
           </div>
         </div>
-        <p className="relative text-xs text-zinc-600">
+        <p className="relative text-xs text-zinc-400">
           Sistem internal · Asia/Jakarta · Data privat
         </p>
       </section>
@@ -122,7 +122,7 @@ export function LoginPage() {
           >
             Lupa kata sandi?
           </Link>
-          <p className="mt-6 text-center text-xs text-zinc-600">
+          <p className="mt-6 text-center text-xs text-zinc-400">
             Akses khusus anggota Koplo Disko
           </p>
         </Card>
