@@ -118,6 +118,7 @@ dialog::backdrop {
   background-color: rgb(248 248 252 / 0.94) !important;
 }
 .light body {
+  color: #18181b;
   background-image:
     radial-gradient(
       circle at 8% -10%,
@@ -152,6 +153,12 @@ dialog::backdrop {
 .light .text-zinc-600 {
   color: #595964 !important;
 }
+.light .text-zinc-700,
+.light .text-zinc-800,
+.light .text-zinc-900,
+.light .text-zinc-950 {
+  color: #18181b !important;
+}
 .light [class*="text-[#fec400]"] {
   color: #6c0c7a !important;
 }
@@ -166,6 +173,31 @@ dialog::backdrop {
 .light .text-red-300,
 .light .text-red-400 {
   color: #b91c1c !important;
+}
+.light .text-red-200 {
+  color: #991b1b !important;
+}
+
+/* Warna teks harus mengikuti surface. Utility text-white global di atas
+   hanya berlaku pada surface terang, bukan pada tombol/tab berwarna. */
+.light [class~="bg-[#6c0c7a]"],
+.light [class~="bg-[#831093]"],
+.light [class~="bg-amber-700"],
+.light [class~="bg-red-700"] {
+  color: #fff !important;
+}
+.light [class~="bg-[#6c0c7a]"] svg,
+.light [class~="bg-[#831093]"] svg,
+.light [class~="bg-amber-700"] svg,
+.light [class~="bg-red-700"] svg {
+  color: currentColor !important;
+}
+.light .hover\:text-white:hover {
+  color: #18181b !important;
+}
+.light [class~="bg-[#6c0c7a]"].hover\:text-white:hover,
+.light [class~="bg-[#831093]"].hover\:text-white:hover {
+  color: #fff !important;
 }
 .light .border-white\/10,
 .light .border-white\/5 {
@@ -204,6 +236,23 @@ dialog::backdrop {
 .light [class*="bg-[#6c0c7a]/"] {
   background-color: rgb(108 12 122 / 0.09) !important;
 }
+.light .theme-hero {
+  border-color: rgb(108 12 122 / 0.2) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgb(108 12 122 / 0.14),
+    rgb(255 255 255 / 0.96) 55%,
+    rgb(254 196 0 / 0.12)
+  ) !important;
+  box-shadow: 0 18px 48px rgb(65 24 72 / 0.1);
+}
+.light .theme-hero [class*="bg-black/"] {
+  border-color: rgb(108 12 122 / 0.16) !important;
+  background-color: rgb(255 255 255 / 0.66) !important;
+}
+.light button:disabled {
+  opacity: 0.62;
+}
 .light .shadow-2xl,
 .light [class*="shadow-"] {
   --tw-shadow-color: rgb(65 24 72 / 0.11);
@@ -215,4 +264,24 @@ dialog::backdrop {
 .light code {
   background: rgb(108 12 122 / 0.08);
   color: #6c0c7a;
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-in {
+  animation: page-in 250ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-in {
+    animation: none;
+  }
 }

@@ -52,8 +52,12 @@ export function PaymentsPanel({
           .limit(50),
         supabase!
           .from("fee_allocation_balances")
-          .select("*")
-          .gt("remaining_amount", 0),
+          .select(
+            "id,fee_split_id,event_id,event_name,component_key,recipient_member_id,recipient_hunter_id,recipient_name,amount,paid_amount,remaining_amount",
+          )
+          .gt("remaining_amount", 0)
+          .order("event_name")
+          .limit(250),
         supabase!
           .from("payouts")
           .select(

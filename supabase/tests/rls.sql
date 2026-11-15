@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(18);
 
 select has_table('public','events','events tersedia');
 select has_table('public','fee_allocations','fee_allocations tersedia');
@@ -14,6 +14,11 @@ select has_function('public','get_member_fee_report',array['timestamp with time 
 select has_function('public','get_management_finance_summary',array[]::text[],'RPC ringkasan keuangan tersedia');
 select ok((select relrowsecurity from pg_class where oid='public.invite_attempts'::regclass),'RLS rate limit undangan aktif');
 select has_index('public','invite_attempts','invite_attempts_actor_created_idx','Index rate limit tersedia');
+select has_function('public','add_document_version',array['uuid','text','text','text','bigint'],'RPC versi dokumen tersedia');
+select has_index('public','documents','documents_active_created_idx','Index dokumen aktif tersedia');
+select has_function('public','export_app_backup',array[]::text[],'RPC ekspor backup tersedia');
+select has_function('public','import_app_backup',array['jsonb'],'RPC impor backup tersedia');
+select has_function('public','reset_app_data',array[]::text[],'RPC reset data tersedia');
 
 select * from finish();
 rollback;

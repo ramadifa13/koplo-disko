@@ -49,9 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
+      // Muat shell dan route awal bersamaan dengan pemulihan profil supaya
+      // refresh tidak melewati loader auth, loader lazy route, lalu loader data.
       const [profileResult, capabilityResult] = await Promise.all([
         client.rpc("get_my_profile").single(),
         client.rpc("get_my_capabilities"),
+        import("../../app/AppShell"),
+        import("../dashboard/DashboardPage"),
       ]);
       if (currentRequest !== requestId) return;
       if (profileResult.error || capabilityResult.error) {
@@ -62,6 +66,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const row = profileResult.data as ProfileRpcRow | null;
       const rawRole = row?.role;
+      const role =
+        rawRole === "owner" || rawRole === "manager" ? rawRole : "member";
+      if (row) {
+        await queryClient.prefetchQuery({
+          queryKey: ["dashboard", role],
+          queryFn: async () => {
+            const { data, error } = await client.rpc(
+              role === "member"
+                ? "get_member_dashboard"
+                : "get_management_dashboard",
+            );
+            if (error) throw error;
+            return data;
+          },
+        });
+      }
+      if (currentRequest !== requestId) return;
       setProfile(
         row
           ? {
@@ -69,10 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               full_name: row.full_name,
               email: row.email,
               is_active: row.is_active,
-              role:
-                rawRole === "owner" || rawRole === "manager"
-                  ? rawRole
-                  : "member",
+              role,
             }
           : null,
       );

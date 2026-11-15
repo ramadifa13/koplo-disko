@@ -6,7 +6,6 @@
 } from "react";
 import { Search, Sparkles, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
 import { cn } from "../lib/cn";
 import { NumericFormat } from "react-number-format";
 import KoploDiskoLoader from "./koplo-disko-loading/KoploDiskoLoader";
@@ -191,7 +190,9 @@ export function StatCard({
 }
 
 function useCountUp(value?: number) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
   const [display, setDisplay] = useState(reducedMotion ? (value ?? 0) : 0);
   const previous = useRef(0);
 

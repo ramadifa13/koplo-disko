@@ -33,6 +33,12 @@ npm run lint
 npm test
 npm run build
 npm audit --omit=dev --audit-level=high
+npm run test:e2e
+supabase test db
 ```
+
+Setelah schema lokal berubah, jalankan `npm run db:types` untuk memperbarui tipe
+TypeScript Supabase. Perintah ini memerlukan Supabase CLI dan stack lokal yang
+sedang aktif.
 
 The GitHub Actions quality gate runs these checks for every push and pull request.

@@ -32,6 +32,8 @@ const allowedTypes = [
 ];
 export function DocumentsPage() {
   const { profile } = useAuth();
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
   const [open, setOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameName, setRenameName] = useState("");
@@ -44,15 +46,21 @@ export function DocumentsPage() {
   } | null>(null);
   const queryClient = useQueryClient();
   const q = useQuery({
-    queryKey: ["documents"],
+    queryKey: ["documents", page],
     queryFn: async () => {
-      const { data, error } = await supabase!
+      const { data, error, count } = await supabase!
         .from("documents")
-        .select("id,name,category,mime_type,size_bytes,storage_path,created_at")
+        .select(
+          "id,name,category,mime_type,size_bytes,storage_path,created_at",
+          {
+            count: "exact",
+          },
+        )
         .is("archived_at", null)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(page * pageSize, page * pageSize + pageSize - 1);
       if (error) throw error;
-      return data;
+      return { rows: data, count: count ?? 0 };
     },
   });
   const events = useQuery({
@@ -206,17 +214,6 @@ export function DocumentsPage() {
       toast.error("Berkas tidak valid atau melebihi 20 MB.");
       return;
     }
-    const versions = await supabase!
-      .from("document_versions")
-      .select("version")
-      .eq("document_id", preview.id)
-      .order("version", { ascending: false })
-      .limit(1);
-    if (versions.error) {
-      toast.error("Versi dokumen tidak dapat dibaca.");
-      return;
-    }
-    const next = (versions.data[0]?.version ?? 0) + 1;
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
     const path = `${profile.id}/${crypto.randomUUID()}-${safeName}`;
     const stored = await supabase!.storage
@@ -226,30 +223,21 @@ export function DocumentsPage() {
       toast.error("Versi baru tidak dapat diunggah.");
       return;
     }
-    const added = await supabase!.from("document_versions").insert({
-      document_id: preview.id,
-      storage_path: path,
-      version: next,
-      size_bytes: file.size,
-      uploaded_by: profile.id,
+    const added = await supabase!.rpc("add_document_version", {
+      p_document_id: preview.id,
+      p_storage_path: path,
+      p_name: file.name,
+      p_mime_type: file.type,
+      p_size_bytes: file.size,
     });
     if (added.error) {
       await supabase!.storage.from("private-documents").remove([path]);
       toast.error("Metadata versi gagal disimpan.");
       return;
     }
-    await supabase!
-      .from("documents")
-      .update({
-        storage_path: path,
-        mime_type: file.type,
-        size_bytes: file.size,
-        name: file.name,
-      })
-      .eq("id", preview.id);
     await queryClient.invalidateQueries({ queryKey: ["documents"] });
     setPreview(null);
-    toast.success(`Versi ${next} berhasil diunggah.`);
+    toast.success(`Versi ${added.data} berhasil diunggah.`);
   };
   return (
     <>
@@ -269,37 +257,65 @@ export function DocumentsPage() {
         <LoadingState />
       ) : q.error ? (
         <ErrorState message="Dokumen tidak dapat dimuat. Pastikan migration Supabase sudah diterapkan." />
-      ) : q.data?.length ? (
-        <div className="grid gap-3">
-          {q.data.map((d) => (
-            <Card
-              key={d.id}
-              className="flex items-center justify-between gap-3"
-            >
-              <div className="min-w-0">
-                <b className="block truncate text-white">{d.name}</b>
-                <p className="text-sm text-zinc-400">
-                  {d.category} · {formatTanggal(d.created_at)} ·{" "}
-                  {Math.ceil(d.size_bytes / 1024)} KB
-                </p>
-              </div>
-              <Button
-                className="shrink-0 bg-zinc-800 px-3 hover:bg-zinc-700"
-                aria-label={`Pratinjau ${d.name}`}
-                onClick={() => void openPreview(d)}
+      ) : q.data?.rows.length ? (
+        <>
+          <div className="grid gap-3">
+            {q.data.rows.map((d) => (
+              <Card
+                key={d.id}
+                className="flex items-center justify-between gap-3"
               >
-                <Eye size={17} />
+                <div className="min-w-0">
+                  <b className="block truncate text-white">{d.name}</b>
+                  <p className="text-sm text-zinc-400">
+                    {d.category} · {formatTanggal(d.created_at)} ·{" "}
+                    {Math.ceil(d.size_bytes / 1024)} KB
+                  </p>
+                </div>
+                <Button
+                  className="shrink-0 bg-zinc-800 px-3 hover:bg-zinc-700"
+                  aria-label={`Pratinjau ${d.name}`}
+                  onClick={() => void openPreview(d)}
+                >
+                  <Eye size={17} />
+                </Button>
+                <Button
+                  className="shrink-0 bg-zinc-800 px-3 hover:bg-zinc-700"
+                  aria-label={`Unduh ${d.name}`}
+                  onClick={() => void download(d.storage_path, d.name)}
+                >
+                  <Download size={17} />
+                </Button>
+              </Card>
+            ))}
+          </div>
+          <nav
+            className="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row"
+            aria-label="Paginasi dokumen"
+          >
+            <p className="text-sm text-zinc-500">
+              {page * pageSize + 1}–
+              {Math.min((page + 1) * pageSize, q.data.count)} dari{" "}
+              {q.data.count}
+            </p>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <Button
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700"
+                disabled={page === 0}
+                onClick={() => setPage((value) => value - 1)}
+              >
+                Sebelumnya
               </Button>
               <Button
-                className="shrink-0 bg-zinc-800 px-3 hover:bg-zinc-700"
-                aria-label={`Unduh ${d.name}`}
-                onClick={() => void download(d.storage_path, d.name)}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700"
+                disabled={(page + 1) * pageSize >= q.data.count}
+                onClick={() => setPage((value) => value + 1)}
               >
-                <Download size={17} />
+                Berikutnya
               </Button>
-            </Card>
-          ))}
-        </div>
+            </div>
+          </nav>
+        </>
       ) : (
         <EmptyState
           title="Belum ada dokumen"

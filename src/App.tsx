@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AppShell } from "./app/AppShell";
 import {
   ManagementRoute,
   ProtectedRoute,
@@ -12,6 +11,9 @@ const DashboardPage = lazy(() =>
   import("./features/dashboard/DashboardPage").then((m) => ({
     default: m.DashboardPage,
   })),
+);
+const AppShell = lazy(() =>
+  import("./app/AppShell").then((module) => ({ default: module.AppShell })),
 );
 const EventsPage = lazy(() =>
   import("./features/events/EventsPage").then((m) => ({

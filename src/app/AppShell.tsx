@@ -1,7 +1,6 @@
 ﻿import { useState } from "react";
 import { Outlet, NavLink, Link, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useRef } from "react";
-import { motion, useReducedMotion } from "motion/react";
 import {
   CalendarDays,
   FileText,
@@ -40,7 +39,6 @@ export function AppShell() {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const location = useLocation();
-  const reducedMotion = useReducedMotion();
   const setNotificationOpen = useCallback((open: boolean) => {
     setActivePopover(open ? "notifications" : null);
   }, []);
@@ -249,18 +247,15 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <motion.main
+        <main
           ref={mainRef}
           tabIndex={-1}
           key={location.pathname}
-          initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
           id="konten-utama"
-          className="mx-auto max-w-7xl overflow-x-clip p-4 pb-28 sm:p-7 lg:pb-10"
+          className="animate-page-in mx-auto max-w-7xl overflow-x-clip p-4 pb-28 outline-none sm:p-7 lg:pb-10"
         >
           <Outlet />
-        </motion.main>
+        </main>
       </div>
       <nav
         className="mobile-bottom-nav fixed inset-x-3 z-30 flex justify-around rounded-2xl border border-white/10 bg-zinc-950/90 px-1 py-2 shadow-2xl backdrop-blur-xl lg:hidden"

@@ -110,7 +110,7 @@ export function DashboardPage() {
     : 0;
   return (
     <>
-      <Card className="relative mb-4 overflow-hidden border-[#fec400]/15 bg-gradient-to-br from-[#6c0c7a]/45 via-[#3b0a43]/35 to-zinc-900/70 p-5 sm:p-8">
+      <Card className="theme-hero relative mb-4 overflow-hidden border-[#fec400]/15 bg-gradient-to-br from-[#6c0c7a]/45 via-[#3b0a43]/35 to-zinc-900/70 p-5 sm:p-8">
         <div className="absolute -right-16 -top-20 size-64 rounded-full bg-[#fec400]/12 blur-3xl" />
         <div className="absolute -bottom-24 left-1/3 size-52 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <div className="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">

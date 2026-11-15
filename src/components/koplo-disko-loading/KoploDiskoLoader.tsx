@@ -26,6 +26,8 @@ export default function KoploDiskoLoader({
     >
       <div className="kd-loader__orbit" aria-hidden="true">
         <span className="kd-loader__glow" />
+        <span className="kd-loader__beat kd-loader__beat--one" />
+        <span className="kd-loader__beat kd-loader__beat--two" />
         <span className="kd-loader__track" />
         <span className="kd-loader__ring kd-loader__ring--outer" />
         <span className="kd-loader__ring kd-loader__ring--inner" />

@@ -47,7 +47,22 @@
   border-radius: 50%;
   background: radial-gradient(circle, rgb(108 12 122 / 24%), transparent 68%);
   filter: blur(12px);
-  animation: kd-glow 2.8s ease-in-out infinite;
+  animation: kd-glow-beat 1.6s linear infinite;
+}
+
+.kd-loader__beat {
+  position: absolute;
+  inset: 10%;
+  border: 2px solid rgb(254 196 0 / 45%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: kd-beat-wave 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.kd-loader__beat--two {
+  border-color: rgb(108 12 122 / 58%);
+  animation-delay: 0.18s;
 }
 
 .kd-loader__track,
@@ -88,7 +103,9 @@
     var(--kd-purple) 192deg 277deg,
     transparent 289deg 360deg
   );
-  animation: kd-orbit-clockwise 2.4s linear infinite;
+  animation:
+    kd-orbit-clockwise 2.4s linear infinite,
+    kd-ring-kick 1.6s ease-out infinite;
   filter: drop-shadow(0 0 5px rgba(254, 196, 0, 0.25));
 }
 
@@ -126,7 +143,9 @@
   filter: drop-shadow(0 0 10px rgb(254 196 0 / 20%));
   user-select: none;
   pointer-events: none;
-  animation: kd-logo-pulse 2.8s ease-in-out infinite;
+  transform-origin: 50% 58%;
+  will-change: transform, filter;
+  animation: kd-logo-jedag 1.6s linear infinite;
 }
 
 .kd-loader__copy {
@@ -175,20 +194,82 @@
   }
 }
 
-@keyframes kd-logo-pulse {
+@keyframes kd-logo-jedag {
   0%,
   100% {
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
-  50% {
-    transform: scale(1.045);
+  8% {
+    transform: translateY(2px) scale(0.96);
+  }
+  14% {
+    transform: translateY(-3px) scale(1.09);
+  }
+  21% {
+    transform: translateY(0) scale(1);
+  }
+  29% {
+    transform: translateY(1px) scale(0.98);
+  }
+  35% {
+    transform: translateY(-2px) scale(1.065);
+  }
+  43%,
+  88% {
+    transform: translateY(0) scale(1);
   }
 }
 
-@keyframes kd-glow {
-  50% {
-    opacity: 0.55;
+@keyframes kd-ring-kick {
+  0%,
+  7%,
+  22%,
+  28%,
+  43%,
+  100% {
+    scale: 1;
+  }
+  14% {
+    scale: 1.055;
+  }
+  35% {
+    scale: 1.035;
+  }
+}
+
+@keyframes kd-glow-beat {
+  0%,
+  7%,
+  22%,
+  28%,
+  43%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.94);
+  }
+  14% {
+    opacity: 0.9;
+    transform: scale(1.2);
+  }
+  35% {
+    opacity: 0.68;
     transform: scale(1.12);
+  }
+}
+
+@keyframes kd-beat-wave {
+  0%,
+  7% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  14% {
+    opacity: 0.72;
+  }
+  34%,
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
   }
 }
 
@@ -209,6 +290,7 @@
   .kd-loader__ring,
   .kd-loader__logo,
   .kd-loader__glow,
+  .kd-loader__beat,
   .kd-loader__dots i {
     animation: none;
     will-change: auto;

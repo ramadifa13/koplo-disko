@@ -4,9 +4,13 @@ import {
   Building2,
   CalendarRange,
   ClipboardList,
+  DatabaseBackup,
+  Download,
   History,
   Plus,
+  RotateCcw,
   ShieldCheck,
+  Upload,
   UserCog,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,21 +27,31 @@ import { formatTanggalWaktu } from "../../lib/format";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
 type Tab =
-  "profile" | "events" | "positions" | "templates" | "permissions" | "audit";
+  | "profile"
+  | "events"
+  | "positions"
+  | "templates"
+  | "permissions"
+  | "backup"
+  | "audit";
 const tabs = [
   { key: "profile" as const, label: "Profil", icon: Building2 },
   { key: "events" as const, label: "Jenis Acara", icon: CalendarRange },
   { key: "positions" as const, label: "Jabatan", icon: UserCog },
   { key: "templates" as const, label: "Template Fee", icon: ClipboardList },
   { key: "permissions" as const, label: "Role & Izin", icon: ShieldCheck },
+  { key: "backup" as const, label: "Backup Data", icon: DatabaseBackup },
   { key: "audit" as const, label: "Audit Log", icon: History },
 ];
 export function SettingsPage() {
   const { profile, capabilities } = useAuth();
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("profile");
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [importPhrase, setImportPhrase] = useState("");
+  const [resetPhrase, setResetPhrase] = useState("");
   const visible = capabilities?.manage_settings
-    ? tabs
+    ? tabs.filter((item) => item.key !== "backup" || profile?.role === "owner")
     : tabs.filter((item) => item.key === "profile");
   const master = useQuery({
     queryKey: ["settings-master", tab],
@@ -213,6 +227,61 @@ export function SettingsPage() {
       );
     },
     onError: () => toast.error("Template fee tidak dapat disimpan."),
+  });
+  const exportBackup = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase!.rpc("export_app_backup");
+      if (error) throw error;
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `koplo-disko-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+    onSuccess: () => toast.success("Backup JSON berhasil diekspor."),
+    onError: () => toast.error("Backup tidak dapat diekspor."),
+  });
+  const importBackup = useMutation({
+    mutationFn: async (file: File) => {
+      if (file.size > 20 * 1024 * 1024)
+        throw new Error("Ukuran backup maksimum 20 MB");
+      const parsed: unknown = JSON.parse(await file.text());
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        (parsed as { format?: unknown }).format !== "koplo-disko-backup" ||
+        (parsed as { version?: unknown }).version !== 1
+      )
+        throw new Error("Format backup tidak valid");
+      const { error } = await supabase!.rpc("import_app_backup", {
+        p_backup: parsed,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Backup berhasil dipulihkan. Memuat ulang aplikasi…");
+      window.setTimeout(() => window.location.reload(), 800);
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Backup tidak dapat diimpor.",
+      ),
+  });
+  const resetData = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase!.rpc("reset_app_data");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      client.clear();
+      setResetPhrase("");
+      toast.success("Data operasional berhasil direset.");
+    },
+    onError: () => toast.error("Data tidak dapat direset."),
   });
   const submitMaster = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -503,6 +572,106 @@ export function SettingsPage() {
             ))}
           </div>
         ))}
+      {tab === "backup" && profile?.role === "owner" && (
+        <div className="grid gap-4">
+          <Card>
+            <div className="flex items-start gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#6c0c7a]/20 text-[#fec400]">
+                <Download size={20} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold text-white">Ekspor seluruh data</h2>
+                <p className="mt-1 text-sm leading-6 text-zinc-400">
+                  Unduh snapshot JSON data aplikasi, konfigurasi, dokumen,
+                  notifikasi, dan audit. Isi file Storage tidak disertakan.
+                </p>
+                <Button
+                  className="mt-4"
+                  disabled={exportBackup.isPending}
+                  onClick={() => exportBackup.mutate()}
+                >
+                  <Download size={17} />
+                  {exportBackup.isPending ? "Mengekspor…" : "Ekspor Backup"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="border-amber-500/20">
+            <div className="flex items-start gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-300">
+                <Upload size={20} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold text-white">Impor dan pulihkan</h2>
+                <p className="mt-1 text-sm leading-6 text-zinc-400">
+                  Mengganti snapshot data saat ini secara transaksional. Gunakan
+                  backup dari project yang sama agar file dokumen tetap
+                  tersedia.
+                </p>
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  className="mt-4 block w-full rounded-xl border border-white/10 bg-zinc-950 p-3 text-sm"
+                  onChange={(event) =>
+                    setBackupFile(event.target.files?.[0] ?? null)
+                  }
+                />
+                <Input
+                  className="mt-3"
+                  value={importPhrase}
+                  onChange={(event) => setImportPhrase(event.target.value)}
+                  placeholder='Ketik "IMPOR DATA" untuk konfirmasi'
+                />
+                <Button
+                  className="mt-3 bg-amber-700 hover:bg-amber-600"
+                  disabled={
+                    !backupFile ||
+                    importPhrase !== "IMPOR DATA" ||
+                    importBackup.isPending
+                  }
+                  onClick={() => backupFile && importBackup.mutate(backupFile)}
+                >
+                  <Upload size={17} />
+                  {importBackup.isPending ? "Memulihkan…" : "Pulihkan Backup"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="border-red-500/30">
+            <div className="flex items-start gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-red-500/10 text-red-300">
+                <RotateCcw size={20} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold text-red-200">
+                  Reset data operasional
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-zinc-400">
+                  Menghapus event, transaksi, pembagian fee, metadata dokumen,
+                  notifikasi, hunter, dan audit. Akun, role, izin, serta data
+                  master tetap dipertahankan. File Storage tidak ikut dihapus.
+                </p>
+                <Input
+                  className="mt-4 border-red-500/20"
+                  value={resetPhrase}
+                  onChange={(event) => setResetPhrase(event.target.value)}
+                  placeholder='Ketik "RESET DATA" untuk konfirmasi'
+                />
+                <Button
+                  className="mt-3 bg-red-700 hover:bg-red-600"
+                  disabled={resetPhrase !== "RESET DATA" || resetData.isPending}
+                  onClick={() => resetData.mutate()}
+                >
+                  <RotateCcw size={17} />
+                  {resetData.isPending ? "Mereset…" : "Reset Data"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
       {tab === "audit" &&
         (audit.isLoading ? (
           <LoadingState />

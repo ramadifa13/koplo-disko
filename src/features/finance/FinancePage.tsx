@@ -172,7 +172,7 @@ export function FinancePage() {
         title="Keuangan"
         description="Pantau uang masuk, kewajiban fee, dan kas tanpa mencampur daftar dengan form pencatatan."
       />
-      <section className="mb-6 overflow-hidden rounded-3xl border border-[#6c0c7a]/30 bg-gradient-to-br from-[#6c0c7a]/25 via-zinc-900/80 to-[#fec400]/5 p-5 sm:p-7">
+      <section className="theme-hero mb-6 overflow-hidden rounded-3xl border border-[#6c0c7a]/30 bg-gradient-to-br from-[#6c0c7a]/25 via-zinc-900/80 to-[#fec400]/5 p-5 sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-[#fec400]/20 bg-[#fec400]/10 px-3 py-1 text-xs font-semibold text-[#fec400]">
